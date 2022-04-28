@@ -22,22 +22,11 @@
   </h3>
 </div>
 
-<!-- TABLE OF CONTENTS -->
-
-## Table of Contents
-
-- [Overview](#overview)
-  - [Built With](#built-with)
-- [Features](#features)
-- [How to use](#how-to-use)
-- [Contact](#contact)
-- [Acknowledgements](#acknowledgements)
-
 <!-- OVERVIEW -->
 
 ## Overview
 
-![screenshot](blob:https://vercel.com/207743ba-295b-45c7-9a78-bf508a8f8067)
+![screenshot](./screenshot.png)
 
 ### Built With
 
