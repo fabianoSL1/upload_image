@@ -12,35 +12,17 @@ import Image from 'next/image';
 import { BsFillCheckCircleFill } from 'react-icons/bs';
 import copy from 'copy-to-clipboard';
 import React, { useEffect, useState } from 'react';
-import { getDownloadURL, getStorage, listAll, ref } from 'firebase/storage';
+import { getDownloadURL, getStorage, ref } from 'firebase/storage';
 import { app } from '../../lib/firebase';
 import { getPlaiceholder } from 'plaiceholder';
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next';
+import { GetServerSideProps, InferGetServerSidePropsType  } from 'next';
 
-export const getStaticPaths: GetStaticPaths = async () => {
-    const storage = getStorage(app);
-    const listRef = ref(storage);
+export const getServerSideProps: GetServerSideProps = async (context) => {
 
-    const list = await listAll(listRef);
-
-    var arrayPaths = new Array();
-
-    for (let item of list.items) {
-        let path = { params: { uuid: item.name } };
-        arrayPaths.push(path);
-    }
-
-    return {
-        paths: arrayPaths,
-        fallback: false
-    };
-};
-
-export const getStaticProps: GetStaticProps = async (context) => {
     const storage = getStorage(app);
     // @ts-ignore
     const storageRef = ref(storage, context.params.uuid);
-
+    
     const url = await getDownloadURL(storageRef);
 
     const { base64, img } = await getPlaiceholder(url);
@@ -49,19 +31,20 @@ export const getStaticProps: GetStaticProps = async (context) => {
         props: {
             img,
             base64
-        }
+        },
+
     };
 };
 
-const ImageUpload: React.FC<InferGetStaticPropsType<typeof getStaticProps>> = ({
+const ImageUpload: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = ({
     img,
     base64
 }) => {
-    const [link, setLink] = useState<string>();
+    const [link, setLink] = useState<string>('');
 
     useEffect(() => {
         if (window) setLink(window.location.toString());
-    }, [setLink]);
+    }, []);
 
     function copyToClipboard() {
         if (link) copy(link);
