@@ -6,49 +6,66 @@ import {
     Input,
     InputGroup,
     InputRightElement,
-    Spinner,
     VStack
 } from '@chakra-ui/react';
 import Image from 'next/image';
 import { BsFillCheckCircleFill } from 'react-icons/bs';
 import copy from 'copy-to-clipboard';
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import { getDownloadURL, getStorage, ref } from 'firebase/storage';
+import React, { useEffect, useState } from 'react';
+import { getDownloadURL, getStorage, listAll, ref } from 'firebase/storage';
 import { app } from '../../lib/firebase';
+import { getPlaiceholder } from 'plaiceholder';
+import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from 'next';
 
-const ImageUpload = () => {
-    const router = useRouter();
-    const [link, setLink] = useState<string>();
-    const [path, setPath] = useState<string>('');
+export const getStaticPaths: GetStaticPaths = async () => {
+    const storage = getStorage(app);
+    const listRef = ref(storage);
 
-    const { uuid } = router.query;
+    const list = await listAll(listRef);
 
-    useEffect(() => {
-        if (window) setPath(window.location.href);
-    }, []);
+    var arrayPaths = new Array();
 
-    useEffect(() => {
-        if (!uuid) return;
-
-        const storage = getStorage(app);
-        // @ts-ignore
-        const storageRef = ref(storage, uuid);
-
-        getDownloadURL(storageRef).then((url) => {
-            setLink(url);
-        });
-    }, [uuid]);
-
-    function copyToClipboard() {
-        copy(path);
+    for (let item of list.items) {
+        let path = { params: { uuid: item.name } };
+        arrayPaths.push(path);
     }
 
-    const image = link ? (
-        <Image src={link} layout="fill" alt="image" />
-    ) : (
-        <Spinner />
-    );
+    return {
+        paths: arrayPaths,
+        fallback: false
+    };
+};
+
+export const getStaticProps: GetStaticProps = async (context) => {
+    const storage = getStorage(app);
+    // @ts-ignore
+    const storageRef = ref(storage, context.params.uuid);
+
+    const url = await getDownloadURL(storageRef);
+
+    const { base64, img } = await getPlaiceholder(url);
+
+    return {
+        props: {
+            img,
+            base64
+        }
+    };
+};
+
+const ImageUpload: React.FC<InferGetStaticPropsType<typeof getStaticProps>> = ({
+    img,
+    base64
+}) => {
+    const [link, setLink] = useState<string>();
+
+    useEffect(() => {
+        if (window) setLink(window.location.toString());
+    }, [setLink]);
+
+    function copyToClipboard() {
+        if (link) copy(link);
+    }
 
     return (
         <Flex bg="#FAFAFB" align="center" justify="center" h="100vh">
@@ -70,19 +87,24 @@ const ImageUpload = () => {
 
                 <Flex
                     position="relative"
-                    width={400}
-                    height={300}
                     align="center"
                     justify="center"
                     borderRadius={12}
                     overflow="hidden"
+                    maxW="400px"
                 >
-                    {image}
+                    <Image
+                        {...img}
+                        alt="image"
+                        blurDataURL={base64}
+                        placeholder="blur"
+                        style={{ transition: 'all ease .5' }}
+                    />
                 </Flex>
 
                 <InputGroup>
                     <Input
-                        value={path}
+                        value={link}
                         isReadOnly
                         width="80%"
                         color="gray.600"
